@@ -1,0 +1,19 @@
+﻿@using System.Web.Optimization
+@model dynamic
+
+@{
+    ViewBag.Title = "title";
+}
+
+<link href="@Styles.Url("~/Content/index.css")" rel="stylesheet" type="text/css" />
+
+<div id="banner" class="text-center">
+    <img src="~/Content/images/alphabet.png" />
+</div>
+
+<p class="lead text-center">
+    Recognize text from photos and send it to your email address!
+</p>
+<div class="text-center">
+    <button class="btn btn-large btn-primary">Upload a new image</button>
+</div>
