@@ -2,7 +2,7 @@
 @model dynamic
 
 @{
-    ViewBag.Title = "title";
+    ViewBag.Title = "Windows Azure Cloud OCR";
 }
 
 <link href="@Styles.Url("~/Content/index.css")" rel="stylesheet" type="text/css" />
@@ -15,5 +15,5 @@
     Recognize text from photos and send it to your email address!
 </p>
 <div class="text-center">
-    <button class="btn btn-large btn-primary">Upload a new image</button>
+    <a href="@Url.Action("UploadImage")" class="btn btn-large btn-primary">Upload a new image</a>
 </div>

@@ -1,0 +1,41 @@
+﻿@using System.Web.Optimization
+@using Recaptcha.Web
+@using Recaptcha.Web.Mvc
+
+@model WebRole.Models.UploadImageViewModel
+
+@{
+    ViewBag.Title = "Windows Azure Cloud OCR: Upload New Image";
+}
+
+<link href="@Styles.Url("~/Content/uploadimage.css")" rel="stylesheet" type="text/css" />
+
+<div class="container">
+    <h2>Upload New Image</h2>
+    
+    @{ Html.BeginForm("UploadImage", "Home", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal" }); }
+
+    <div class="control-group">  
+        @Html.LabelFor(v => v.ImageFile, new { @class = "control-label" })
+        <div class="controls">
+            <input type="file" name="ImageFile" />
+        </div>
+
+        @Html.LabelFor(v => v.EmailAddress, new { @class = "control-label" })
+        <div class="controls">
+            @Html.TextBoxFor(v => v.EmailAddress)
+        </div>
+
+        @Html.LabelFor(v => v.CaptchaValue, new { @class = "control-label" })
+        <div class="controls">
+            @Html.Recaptcha(@Model.CaptchaPublicKey, RecaptchaTheme.Clean)
+        </div>
+    </div>
+    
+    <div class="text-center">
+        <input type="submit" class="btn-large btn-primary" value="Upload" />
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+@{ Html.EndForm(); }
