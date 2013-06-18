@@ -1,0 +1,19 @@
+﻿@using System.Web.Optimization
+@model dynamic
+
+@{
+    ViewBag.Title = "Windows Azure Cloud OCR: Upload New Image";
+}
+
+<link href="@Styles.Url("~/Content/uploadimage.css")" rel="stylesheet" type="text/css" />
+
+<div class="text-center success-image-container">
+    <img src="~/Content/images/checkmark.png" />
+</div>
+
+<p class="lead text-center">
+    Your image is now being processed! The results will be emailed to you.
+</p>
+<div class="text-center">
+    <a href="@Url.Action("UploadImage")" class="btn btn-large btn-primary">Upload another image</a>
+</div>

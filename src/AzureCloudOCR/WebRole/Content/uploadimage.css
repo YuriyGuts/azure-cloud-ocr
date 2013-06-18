@@ -8,3 +8,9 @@ div.controls
 {
     padding-bottom: 10px;
 }
+
+.success-image-container img
+{
+    margin-top: 100px;
+    margin-bottom: 25px;
+}
