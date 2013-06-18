@@ -1,7 +1,15 @@
 @if (ViewData.ModelState.Any(x => x.Value.Errors.Any())) 
 { 
-   <div class="alert alert-error"> 
-      <a class="close" data-dismiss="alert">&times;</a> 
-      @Html.ValidationSummary(true)
-   </div>
+    <div class="alert alert-error">
+        <a class="close" data-dismiss="alert">&times;</a>
+        <ul>
+            @{
+                var validationErrors = ViewData.ModelState.Keys.SelectMany(key => ViewData.ModelState[key].Errors);
+            }
+            @foreach (var error in validationErrors)
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
 }

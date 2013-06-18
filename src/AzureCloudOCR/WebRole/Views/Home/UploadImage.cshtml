@@ -24,9 +24,10 @@
         @Html.LabelFor(v => v.EmailAddress, new { @class = "control-label" })
         <div class="controls">
             @Html.TextBoxFor(v => v.EmailAddress)
+            @Html.ValidationMessageFor(v => v.EmailAddress)
         </div>
 
-        @Html.LabelFor(v => v.CaptchaValue, new { @class = "control-label" })
+        @Html.Label("Verification code", new { @class = "control-label" })
         <div class="controls">
             @Html.Recaptcha(@Model.CaptchaPublicKey, RecaptchaTheme.Clean)
         </div>

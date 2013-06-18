@@ -1,10 +1,15 @@
-﻿using System.Web.Configuration;
+﻿using System;
+using System.Drawing;
+using System.Web;
+using System.Web.Configuration;
 using System.Web.Mvc;
+using Recaptcha.Web;
+using Recaptcha.Web.Mvc;
 using WebRole.Models;
 
 namespace WebRole.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController : BootstrapBaseController
     {
         //
         // GET: /Home/
@@ -17,9 +22,12 @@ namespace WebRole.Controllers
         //
         // GET: /Home/UploadImage/
 
-        public ActionResult UploadImage()
+        [HttpGet]
+        [ActionName("UploadImage")]
+        public ActionResult UploadImage_Get(UploadImageViewModel model)
         {
-            return View(new UploadImageViewModel(WebConfigurationManager.AppSettings["recaptchaPublicKey"]));
+            NormalizeUploadImageViewModel(model);
+            return View(model);
         }
 
         //
@@ -27,9 +35,77 @@ namespace WebRole.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult UploadImage(UploadImageViewModel model)
+        [ActionName("UploadImage")]
+        public ActionResult UploadImage_Post(UploadImageViewModel model)
         {
-            return Content("TODO: Process posted data.");
+            NormalizeUploadImageViewModel(model);
+            
+            var image = ValidateAndExtractImage(model.ImageFile);
+            ValidateCaptcha();
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                string blobName = UploadImageToStorage(image);
+                CreateNewOCRTask(blobName, model.EmailAddress);
+                return View("UploadImageSuccessful");
+            }
+            catch (Exception e)
+            {
+                Error("An error occurred: " + e.Message);
+                return View(model);
+            }
+        }
+
+        private void NormalizeUploadImageViewModel(UploadImageViewModel model)
+        {
+            if (model != null && model.CaptchaPublicKey == null)
+            {
+                model.CaptchaPublicKey = WebConfigurationManager.AppSettings["recaptchaPublicKey"];
+            }
+        }
+
+        private Image ValidateAndExtractImage(HttpPostedFileBase imageFile)
+        {
+            Image result = null;
+            try
+            {
+                result = Image.FromStream(imageFile.InputStream);
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError("invalid-image", "Invalid image or unsupported image format.");
+            }
+            return result;
+        }
+
+        private void ValidateCaptcha()
+        {
+            RecaptchaVerificationHelper recaptchaHelper = this.GetRecaptchaVerificationHelper(WebConfigurationManager.AppSettings["recaptchaPrivateKey"]);
+            if (String.IsNullOrEmpty(recaptchaHelper.Response))
+            {
+                ModelState.AddModelError("captcha-answer-empty", "Verification code cannot be empty.");
+                return;
+            }
+
+            RecaptchaVerificationResult recaptchaResult = recaptchaHelper.VerifyRecaptchaResponse();
+            if (recaptchaResult != RecaptchaVerificationResult.Success)
+            {
+                ModelState.AddModelError("captcha-answer-incorrect", "Incorrect verification code.");
+            }
+        }
+
+        private string UploadImageToStorage(Image image)
+        {
+            return null;
+        }
+
+        private void CreateNewOCRTask(string blobName, string emailAddress)
+        {
         }
     }
 }

@@ -32,7 +32,10 @@
         </div>        
         <div class="container">
             @Html.Partial("_alerts")
-            @Html.Partial("_validationSummary")
+            @if (IsPost)
+            {
+                @Html.Partial("_validationSummary")
+            }
             @RenderBody()   
             <footer class="navbar-fixed-bottom">
                 <hr>
