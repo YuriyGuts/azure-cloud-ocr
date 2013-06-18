@@ -85,68 +85,9 @@ namespace Recaptcha.Web
         /// <returns>Returns the result as a value of the <see cref="RecaptchaVerificationResult"/> enum.</returns>
         public RecaptchaVerificationResult VerifyRecaptchaResponse()
         {
-            string privateKey = RecaptchaKeyHelper.ParseKey(PrivateKey);
-
-            string postData = String.Format("privatekey={0}&remoteip={1}&challenge={2}&response={3}", privateKey, this.UserHostAddress, this._Challenge, this.Response);
-
-            byte[] postDataBuffer = System.Text.Encoding.ASCII.GetBytes(postData);
-
-            Uri verifyUri = new Uri("http://api-verify.recaptcha.net/verify", UriKind.Absolute);
-
-            try
-            {
-                HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(verifyUri);
-                webRequest.ContentType = "application/x-www-form-urlencoded";
-                webRequest.ContentLength = postDataBuffer.Length;
-                webRequest.Method = "POST";
-
-                IWebProxy proxy = WebRequest.GetSystemWebProxy();
-                proxy.Credentials = CredentialCache.DefaultCredentials;
-
-                webRequest.Proxy = proxy;
-
-                Stream requestStream = webRequest.GetRequestStream();
-                requestStream.Write(postDataBuffer, 0, postDataBuffer.Length);
-
-                HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
-
-                string[] responseTokens = null;
-                using (StreamReader sr = new StreamReader(webResponse.GetResponseStream()))
-                {
-                    responseTokens = sr.ReadToEnd().Split('\n');
-                }
-
-                if (responseTokens.Length == 2)
-                {
-                    Boolean success = responseTokens[0].Equals("true", StringComparison.CurrentCulture);
-
-                    if (success)
-                    {
-                        return RecaptchaVerificationResult.Success;
-                    }
-                    else
-                    {
-                        if (responseTokens[1].Equals("incorrect-captcha-sol", StringComparison.CurrentCulture))
-                        {
-                            return RecaptchaVerificationResult.IncorrectCaptchaSolution;
-                        }
-                        else if (responseTokens[1].Equals("invalid-site-private-key", StringComparison.CurrentCulture))
-                        {
-                            return RecaptchaVerificationResult.InvalidPrivateKey;
-                        }
-                        else if (responseTokens[1].Equals("invalid-request-cookie", StringComparison.CurrentCulture))
-                        {
-                            return RecaptchaVerificationResult.InvalidCookieParameters;
-                        }
-                    }
-                }
-
-                return RecaptchaVerificationResult.UnknownError;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            var webRequest = CreateVerificationWebRequest();
+            HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
+            return GetVerificationResultFromWebResponse(webResponse);
         }
 
         /// <summary>
@@ -155,73 +96,76 @@ namespace Recaptcha.Web
         /// <returns>Returns the result as a value of the <see cref="RecaptchaVerificationResult"/> enum.</returns>
         public Task<RecaptchaVerificationResult> VerifyRecaptchaResponseTaskAsync()
         {
-            Task<RecaptchaVerificationResult> result = Task<RecaptchaVerificationResult>.Factory.StartNew(() =>
-            {
-                string privateKey = RecaptchaKeyHelper.ParseKey(PrivateKey);
-
-                string postData = String.Format("privatekey={0}&remoteip={1}&challenge={2}&response={3}", privateKey, this.UserHostAddress, this._Challenge, this.Response);
-
-                byte[] postDataBuffer = System.Text.Encoding.ASCII.GetBytes(postData);
-
-                Uri verifyUri = new Uri("http://api-verify.recaptcha.net/verify", UriKind.Absolute);
-
-                try
-                {
-                    HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(verifyUri);
-                    webRequest.ContentType = "application/x-www-form-urlencoded";
-                    webRequest.ContentLength = postDataBuffer.Length;
-                    webRequest.Method = "POST";
-
-                    IWebProxy proxy = WebRequest.GetSystemWebProxy();
-                    proxy.Credentials = CredentialCache.DefaultCredentials;
-
-                    webRequest.Proxy = proxy;
-
-                    Stream requestStream = webRequest.GetRequestStream();
-                    requestStream.Write(postDataBuffer, 0, postDataBuffer.Length);
-
-                    HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
-
-                    string[] responseTokens = null;
-                    using (StreamReader sr = new StreamReader(webResponse.GetResponseStream()))
-                    {
-                        responseTokens = sr.ReadToEnd().Split('\n');
-                    }
-
-                    if (responseTokens.Length == 2)
-                    {
-                        Boolean success = responseTokens[0].Equals("true", StringComparison.CurrentCulture);
-
-                        if (success)
-                        {
-                            return RecaptchaVerificationResult.Success;
-                        }
-                        else
-                        {
-                            if (responseTokens[1].Equals("incorrect-captcha-sol", StringComparison.CurrentCulture))
-                            {
-                                return RecaptchaVerificationResult.IncorrectCaptchaSolution;
-                            }
-                            else if (responseTokens[1].Equals("invalid-site-private-key", StringComparison.CurrentCulture))
-                            {
-                                return RecaptchaVerificationResult.InvalidPrivateKey;
-                            }
-                            else if (responseTokens[1].Equals("invalid-request-cookie", StringComparison.CurrentCulture))
-                            {
-                                return RecaptchaVerificationResult.InvalidCookieParameters;
-                            }
-                        }
-                    }
-
-                    return RecaptchaVerificationResult.UnknownError;
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
-            });
-
+            Task<RecaptchaVerificationResult> result = Task<RecaptchaVerificationResult>.Factory.StartNew(VerifyRecaptchaResponse);
             return result;
+        }
+
+        private HttpWebRequest CreateVerificationWebRequest()
+        {
+            string privateKey = RecaptchaKeyHelper.ParseKey(PrivateKey);
+
+            Uri verifyUri = new Uri("http://api-verify.recaptcha.net/verify", UriKind.Absolute);
+
+            string postData = String.Format("privatekey={0}&remoteip={1}&challenge={2}&response={3}", privateKey, this.UserHostAddress, this._Challenge, this.Response);
+            byte[] postDataBuffer = System.Text.Encoding.ASCII.GetBytes(postData);
+
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(verifyUri);
+            webRequest.ContentType = "application/x-www-form-urlencoded";
+            webRequest.ContentLength = postDataBuffer.Length;
+            webRequest.Method = "POST";
+
+            // With a proxy server, it works only if set twice, before and after assigning the proxy.
+            webRequest.ServicePoint.Expect100Continue = false;
+
+            IWebProxy proxy = WebRequest.GetSystemWebProxy();
+            proxy.Credentials = CredentialCache.DefaultCredentials;
+            webRequest.Proxy = proxy;
+
+            // See above, it works only if done twice.
+            webRequest.ServicePoint.Expect100Continue = false;
+
+            using (Stream requestStream = webRequest.GetRequestStream())
+            {
+                requestStream.Write(postDataBuffer, 0, postDataBuffer.Length);
+            }
+
+            return webRequest;
+        }
+
+        private static RecaptchaVerificationResult GetVerificationResultFromWebResponse(HttpWebResponse webResponse)
+        {
+            string[] responseTokens = null;
+            using (StreamReader sr = new StreamReader(webResponse.GetResponseStream()))
+            {
+                responseTokens = sr.ReadToEnd().Split('\n');
+            }
+
+            if (responseTokens.Length == 2)
+            {
+                Boolean success = responseTokens[0].Equals("true", StringComparison.CurrentCulture);
+
+                if (success)
+                {
+                    return RecaptchaVerificationResult.Success;
+                }
+                else
+                {
+                    if (responseTokens[1].Equals("incorrect-captcha-sol", StringComparison.CurrentCulture))
+                    {
+                        return RecaptchaVerificationResult.IncorrectCaptchaSolution;
+                    }
+                    else if (responseTokens[1].Equals("invalid-site-private-key", StringComparison.CurrentCulture))
+                    {
+                        return RecaptchaVerificationResult.InvalidPrivateKey;
+                    }
+                    else if (responseTokens[1].Equals("invalid-request-cookie", StringComparison.CurrentCulture))
+                    {
+                        return RecaptchaVerificationResult.InvalidCookieParameters;
+                    }
+                }
+            }
+
+            return RecaptchaVerificationResult.UnknownError;
         }
     }
 }
