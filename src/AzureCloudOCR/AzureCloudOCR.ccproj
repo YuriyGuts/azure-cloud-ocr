@@ -37,6 +37,14 @@
     <ServiceConfiguration Include="ServiceConfiguration.Cloud.cscfg" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="EmailWorkerRole\EmailWorkerRole.csproj">
+      <Name>EmailWorkerRole</Name>
+      <Project>{c4a77b29-f900-4759-94a5-9c03b1a4b98a}</Project>
+      <Private>True</Private>
+      <RoleType>Worker</RoleType>
+      <RoleName>EmailWorkerRole</RoleName>
+      <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
+    </ProjectReference>
     <ProjectReference Include="OCRWorkerRole\OCRWorkerRole.csproj">
       <Name>OCRWorkerRole</Name>
       <Project>{0aa9d275-04ec-4b12-910d-7eff69e4ddb6}</Project>
@@ -55,10 +63,14 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="EmailWorkerRoleContent\" />
     <Folder Include="OCRWorkerRoleContent\" />
     <Folder Include="WebRoleContent\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="EmailWorkerRoleContent\diagnostics.wadcfg">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="OCRWorkerRoleContent\diagnostics.wadcfg">
       <SubType>Content</SubType>
     </Content>

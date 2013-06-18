@@ -14,4 +14,11 @@
       <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=eleksocr;AccountKey=enter+your+private+key+here++w==" />
     </ConfigurationSettings>
   </Role>
+  <Role name="EmailWorkerRole">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
+      <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=eleksocr;AccountKey=enter+your+private+key+here++w==" />
+    </ConfigurationSettings>
+  </Role>
 </ServiceConfiguration>
