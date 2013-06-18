@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Web;
 using System.Web.Configuration;
 using System.Web.Mvc;
+using AzureStorageUtils;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Queue;
 using Recaptcha.Web;
 using Recaptcha.Web.Mvc;
 using WebRole.Models;
@@ -50,8 +55,10 @@ namespace WebRole.Controllers
 
             try
             {
-                string blobName = UploadImageToStorage(image);
-                CreateNewOCRTask(blobName, model.EmailAddress);
+                var blob = UploadImageToStorage(image);
+                image.Dispose();
+
+                CreateNewOCRTask(blob.Name, model.EmailAddress);
                 return View("UploadImageSuccessful");
             }
             catch (Exception e)
@@ -99,13 +106,22 @@ namespace WebRole.Controllers
             }
         }
 
-        private string UploadImageToStorage(Image image)
+        private CloudBlockBlob UploadImageToStorage(Image image)
         {
-            return null;
+            using (MemoryStream imageStream = new MemoryStream())
+            {
+                image.Save(imageStream, ImageFormat.Tiff);
+                var blob = AzureBlobs.ImageBlobContainer.GetBlockBlobReference(Guid.NewGuid().ToString());
+                blob.UploadFromStream(imageStream);
+                return blob;
+            }
         }
 
         private void CreateNewOCRTask(string blobName, string emailAddress)
         {
+            var messageContent = string.Format("{0}|{1}", blobName, emailAddress);
+            var queueMessage = new CloudQueueMessage(messageContent);
+            AzureQueues.OCRQueue.AddMessage(queueMessage);
         }
     }
 }
