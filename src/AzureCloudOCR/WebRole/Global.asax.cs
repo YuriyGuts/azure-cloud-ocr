@@ -21,6 +21,7 @@ namespace WebRole
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BootstrapSupport.BootstrapBundleConfig.RegisterBundles(System.Web.Optimization.BundleTable.Bundles);
             ExampleLayoutsRouteConfig.RegisterRoutes(RouteTable.Routes);
+            AzureStorageConfig.InitializeAzureStorage();
         }
     }
 }

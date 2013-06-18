@@ -3,7 +3,6 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Web;
-using System.Web.Configuration;
 using System.Web.Mvc;
 using AzureStorageUtils;
 using Microsoft.WindowsAzure.Storage.Blob;
@@ -11,6 +10,7 @@ using Microsoft.WindowsAzure.Storage.Queue;
 using Recaptcha.Web;
 using Recaptcha.Web.Mvc;
 using WebRole.Models;
+using WebRole.Properties;
 
 namespace WebRole.Controllers
 {
@@ -72,7 +72,7 @@ namespace WebRole.Controllers
         {
             if (model != null && model.CaptchaPublicKey == null)
             {
-                model.CaptchaPublicKey = WebConfigurationManager.AppSettings["recaptchaPublicKey"];
+                model.CaptchaPublicKey = Settings.Default.RecaptchaPublicKey;
             }
         }
 
@@ -92,7 +92,7 @@ namespace WebRole.Controllers
 
         private void ValidateCaptcha()
         {
-            RecaptchaVerificationHelper recaptchaHelper = this.GetRecaptchaVerificationHelper(WebConfigurationManager.AppSettings["recaptchaPrivateKey"]);
+            RecaptchaVerificationHelper recaptchaHelper = this.GetRecaptchaVerificationHelper(Settings.Default.RecaptchaPrivateKey);
             if (String.IsNullOrEmpty(recaptchaHelper.Response))
             {
                 ModelState.AddModelError("captcha-answer-empty", "Verification code cannot be empty.");

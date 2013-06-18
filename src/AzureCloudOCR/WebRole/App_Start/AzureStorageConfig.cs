@@ -1,6 +1,6 @@
-﻿using System.Web.Configuration;
-using AzureStorageUtils;
-using Microsoft.WindowsAzure.ServiceRuntime;
+﻿using AzureStorageUtils;
+using Microsoft.WindowsAzure;
+using WebRole.Properties;
 
 namespace WebRole
 {
@@ -8,9 +8,9 @@ namespace WebRole
     {
         public static void InitializeAzureStorage()
         {
-            string storageConnectionString = RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString");
-            string ocrQueueName = WebConfigurationManager.AppSettings["OCRQueueName"];
-            string imageBlobContainerName = WebConfigurationManager.AppSettings["ImageBlobContainerName"];
+            string storageConnectionString = CloudConfigurationManager.GetSetting("StorageConnectionString");
+            string ocrQueueName = Settings.Default.OCRQueueName;
+            string imageBlobContainerName = Settings.Default.ImageBlobContainerName;
 
             // Email queue and Text blob container won't be used in Web Role so we'll just pass nulls.
             // Sure, in this situation AzureQueues and AzureBlobs classes don't look like good design but let's keep it simple.
