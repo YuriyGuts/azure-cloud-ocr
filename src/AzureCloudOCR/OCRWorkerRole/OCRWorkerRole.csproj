@@ -55,7 +55,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Services.Client" />
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Spatial, Version=5.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\System.Spatial.5.2.0\lib\net40\System.Spatial.dll</HintPath>
@@ -78,6 +77,10 @@
     <ProjectReference Include="..\AzureStorageUtils\AzureStorageUtils.csproj">
       <Project>{deb0f038-469c-4eb5-b63b-595ae70caf06}</Project>
       <Name>AzureStorageUtils</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TesseractProcessor\TesseractProcessor.csproj">
+      <Project>{c5fe4423-7beb-4e2a-8820-33b39cdcaa1d}</Project>
+      <Name>TesseractProcessor</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

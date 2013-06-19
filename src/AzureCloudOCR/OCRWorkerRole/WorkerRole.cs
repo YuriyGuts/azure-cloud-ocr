@@ -1,9 +1,7 @@
 using System;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Net;
-using System.Text;
 using System.Threading;
 using AzureStorageUtils;
 using Microsoft.WindowsAzure.ServiceRuntime;
@@ -28,14 +26,7 @@ namespace OCRWorkerRole
                 Trace.TraceInformation("OCRWorkerRole is awake.", "Information");
                 Trace.TraceInformation("OCR Queue has approximately {0} message(s).", AzureQueues.OCRQueue.ApproximateMessageCount);
 
-                if (onStopCalled)
-                {
-                    Trace.TraceInformation("OnStop request caught in Run method.");
-                    returnedFromRunMethod = true;
-                    break;
-                }
-
-                var ocrMessageVisibilityTimeout = TimeSpan.FromMinutes(3);
+                var ocrMessageVisibilityTimeout = TimeSpan.FromMinutes(1);
                 var ocrQueueRequestOptions = new QueueRequestOptions
                 {
                     MaximumExecutionTime = TimeSpan.FromMinutes(15),
@@ -44,6 +35,13 @@ namespace OCRWorkerRole
 
                 while (true)
                 {
+                    if (onStopCalled)
+                    {
+                        Trace.TraceInformation("OnStop request caught in Run method. Stopping all work.");
+                        returnedFromRunMethod = true;
+                        return;
+                    }
+
                     var queueMessage = AzureQueues.OCRQueue.GetMessage(ocrMessageVisibilityTimeout, ocrQueueRequestOptions);
                     if (queueMessage == null)
                     {
@@ -115,16 +113,16 @@ namespace OCRWorkerRole
                 return;
             }
 
-            string blobName;
+            string imageBlobName;
             string recipientEmail;
 
             try
             {
                 var splitMessage = messageContent.Split('|');
-                blobName = splitMessage[0];
+                imageBlobName = splitMessage[0];
                 recipientEmail = splitMessage[1];
 
-                if (string.IsNullOrEmpty(blobName) || string.IsNullOrEmpty(recipientEmail))
+                if (string.IsNullOrEmpty(imageBlobName) || string.IsNullOrEmpty(recipientEmail))
                 {
                     throw new FormatException("Blob name and recipient email but be non-empty.");
                 }
@@ -138,10 +136,13 @@ namespace OCRWorkerRole
 
             try
             {
-                Image image = ReadImageFromBlob(blobName);
-                string ocrText = RecognizeTextOnImage(image);
-                CloudBlockBlob textBlob = StoreRecognizedTextAsBlob(ocrText, blobName + ".txt");
+                string imageFileName = SaveImageBlobToLocalFile(imageBlobName);
+                string ocrTextFileName = PerformOCROnImageFile(imageFileName);
+                string ocrBlobName = new FileInfo(ocrTextFileName).Name;
+                CloudBlockBlob textBlob = StoreRecognizedTextAsBlob(ocrTextFileName, ocrBlobName);
                 CreateEmailTask(textBlob.Name, recipientEmail);
+                DeleteInputImage(imageBlobName);
+                DeleteTemporaryFiles(imageFileName, ocrTextFileName);
             }
             catch (Exception ex)
             {
@@ -153,25 +154,46 @@ namespace OCRWorkerRole
             AzureQueues.OCRQueue.DeleteMessage(queueMessage);
         }
 
-        private Image ReadImageFromBlob(string blobName)
+        private string SaveImageBlobToLocalFile(string imageBlobName)
         {
-            var blob = AzureBlobs.ImageBlobContainer.GetBlockBlobReference(blobName);
-            var result = Image.FromStream(blob.OpenRead());
-            return result;
-        }
-
-        private string RecognizeTextOnImage(Image image)
-        {
-            // TODO: Process image with OCR engine.
-            return "This is the recognized text.";
-        }
-
-        private CloudBlockBlob StoreRecognizedTextAsBlob(string ocrText, string blobName)
-        {
-            var blob = AzureBlobs.TextBlobContainer.GetBlockBlobReference(blobName);
-            using (MemoryStream textStream = new MemoryStream(Encoding.UTF8.GetBytes(ocrText)))
+            var imageBlob = AzureBlobs.ImageBlobContainer.GetBlockBlobReference(imageBlobName);
+            var localFileName = imageBlobName;
+            using (FileStream outputFileStream = new FileStream(localFileName, FileMode.Create))
             {
-                blob.UploadFromStream(textStream);
+                imageBlob.DownloadToStream(outputFileStream);
+            }
+            return localFileName;
+        }
+
+        private string PerformOCROnImageFile(string imageFileName)
+        {
+            // Tesseract uses a few 32-bit unmanaged libraries which cannot be loaded from a 64-bit managed assembly.
+            // Windows Azure does not support x86 assemblies as worker roles; however, we can still launch an x86 .exe.
+            // So, as a workaround, we'll delegate the work to an external process, TesseractProcessor.exe.
+
+            string ocrOutputFileName = imageFileName + ".ocr.txt";
+            string recognizerArguments = string.Format("\"{0}\" \"{1}\"", imageFileName, ocrOutputFileName);
+            var recognizerStartInfo = new ProcessStartInfo
+            {
+                FileName = "TesseractProcessor.exe",
+                Arguments = recognizerArguments,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            var recognizerProcess = Process.Start(recognizerStartInfo);
+            
+            // We can actually process multiple images in parallel processes but let's keep it simple for now.
+            recognizerProcess.WaitForExit((int)TimeSpan.FromMinutes(2).TotalMilliseconds);
+            
+            return ocrOutputFileName;
+        }
+
+        private CloudBlockBlob StoreRecognizedTextAsBlob(string ocrTextFileName, string targetBlobName)
+        {
+            var blob = AzureBlobs.TextBlobContainer.GetBlockBlobReference(targetBlobName);
+            using (FileStream ocrTextStream = new FileStream(ocrTextFileName, FileMode.Open))
+            {
+                blob.UploadFromStream(ocrTextStream);
             }
             return blob;
         }
@@ -181,6 +203,30 @@ namespace OCRWorkerRole
             var messageContent = string.Format("{0}|{1}", textBlobName, recipientEmail);
             var queueMessage = new CloudQueueMessage(messageContent);
             AzureQueues.EmailQueue.AddMessage(queueMessage);
+        }
+
+        private void DeleteInputImage(string imageBlobName)
+        {
+            var imageBlob = AzureBlobs.ImageBlobContainer.GetBlockBlobReference(imageBlobName);
+            imageBlob.Delete();
+        }
+
+        private void DeleteTemporaryFiles(string imageFileName, string ocrTextFileName)
+        {
+            // A bit dirty, but to avoid issues with not-yet-released locks on temporary files.
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    File.Delete(imageFileName);
+                    File.Delete(ocrTextFileName);
+                    return;
+                }
+                catch (Exception)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
         }
     }
 }
