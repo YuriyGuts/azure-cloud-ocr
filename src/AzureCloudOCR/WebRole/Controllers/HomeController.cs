@@ -111,7 +111,10 @@ namespace WebRole.Controllers
             using (MemoryStream imageStream = new MemoryStream())
             {
                 image.Save(imageStream, ImageFormat.Tiff);
-                var blob = AzureBlobs.ImageBlobContainer.GetBlockBlobReference(Guid.NewGuid().ToString());
+                imageStream.Seek(0, SeekOrigin.Begin);
+
+                string blobName = Guid.NewGuid() + ".tif";
+                var blob = AzureBlobs.ImageBlobContainer.GetBlockBlobReference(blobName);
                 blob.UploadFromStream(imageStream);
                 return blob;
             }
