@@ -13,6 +13,7 @@
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
       <Setting name="StorageConnectionString" value="UseDevelopmentStorage=true" />
       <Setting name="ImageBlobContainerName" value="imageuploads" />
+      <Setting name="TextBlobContainerName" value="ocrtext" />
       <Setting name="OCRQueueName" value="ocrqueue" />
       <Setting name="EmailQueueName" value="emailqueue" />
     </ConfigurationSettings>
@@ -22,6 +23,7 @@
     <ConfigurationSettings>
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
       <Setting name="StorageConnectionString" value="UseDevelopmentStorage=true" />
+      <Setting name="TextBlobContainerName" value="ocrtext" />
       <Setting name="EmailQueueName" value="emailqueue" />
     </ConfigurationSettings>
   </Role>

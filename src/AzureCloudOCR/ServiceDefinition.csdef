@@ -25,6 +25,7 @@
     <ConfigurationSettings>
       <Setting name="StorageConnectionString" />
       <Setting name="ImageBlobContainerName" />
+      <Setting name="TextBlobContainerName" />
       <Setting name="OCRQueueName" />
       <Setting name="EmailQueueName" />
     </ConfigurationSettings>
@@ -35,6 +36,7 @@
     </Imports>
     <ConfigurationSettings>
       <Setting name="StorageConnectionString" />
+      <Setting name="TextBlobContainerName" />
       <Setting name="EmailQueueName" />
     </ConfigurationSettings>
   </WorkerRole>
