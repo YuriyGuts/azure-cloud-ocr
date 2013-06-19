@@ -17,6 +17,7 @@ namespace OCRWorkerRole
     {
         private bool onStopCalled;
         private bool returnedFromRunMethod;
+        private const int maxSingleMessageDequeueCount = 10;
 
         public override void Run()
         {
@@ -38,7 +39,7 @@ namespace OCRWorkerRole
                 var ocrQueueRequestOptions = new QueueRequestOptions
                 {
                     MaximumExecutionTime = TimeSpan.FromMinutes(15),
-                    RetryPolicy = new LinearRetry(TimeSpan.FromMinutes(5), 5)
+                    RetryPolicy = new LinearRetry(TimeSpan.FromMinutes(1), 5)
                 };
 
                 while (true)
@@ -105,6 +106,14 @@ namespace OCRWorkerRole
         {
             string messageContent = queueMessage.AsString;
             Trace.TraceInformation("Processing OCR queue message: " + messageContent);
+
+            // To protect from accidental poison messages that get stuck in the queue.
+            if (queueMessage.DequeueCount > maxSingleMessageDequeueCount)
+            {
+                Trace.TraceInformation("Message max dequeue limit reached. Deleting it as a poison message.");
+                AzureQueues.OCRQueue.DeleteMessage(queueMessage);
+                return;
+            }
 
             string blobName;
             string recipientEmail;
