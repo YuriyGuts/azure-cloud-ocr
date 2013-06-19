@@ -24,6 +24,9 @@
     </Imports>
     <ConfigurationSettings>
       <Setting name="StorageConnectionString" />
+      <Setting name="ImageBlobContainerName" />
+      <Setting name="OCRQueueName" />
+      <Setting name="EmailQueueName" />
     </ConfigurationSettings>
   </WorkerRole>
   <WorkerRole name="EmailWorkerRole" vmsize="Small">
@@ -32,6 +35,7 @@
     </Imports>
     <ConfigurationSettings>
       <Setting name="StorageConnectionString" />
+      <Setting name="EmailQueueName" />
     </ConfigurationSettings>
   </WorkerRole>
 </ServiceDefinition>
