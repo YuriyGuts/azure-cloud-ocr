@@ -38,6 +38,8 @@
       <Setting name="StorageConnectionString" />
       <Setting name="TextBlobContainerName" />
       <Setting name="EmailQueueName" />
+      <Setting name="SendGridUserName" />
+      <Setting name="SendGridPassword" />
     </ConfigurationSettings>
   </WorkerRole>
 </ServiceDefinition>

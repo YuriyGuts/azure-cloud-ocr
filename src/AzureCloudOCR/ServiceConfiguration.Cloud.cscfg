@@ -25,6 +25,8 @@
       <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=eleksocr;AccountKey=enter+your+private+key+here++w==" />
       <Setting name="TextBlobContainerName" value="ocrtext" />
       <Setting name="EmailQueueName" value="emailqueue" />
+      <Setting name="SendGridUserName" value="sendgriduser" />
+      <Setting name="SendGridPassword" value="sendgridpassword" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>
