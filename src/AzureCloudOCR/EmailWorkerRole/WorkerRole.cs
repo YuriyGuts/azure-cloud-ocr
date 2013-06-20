@@ -165,21 +165,21 @@ namespace EmailWorkerRole
 
         private void SendOCRTextByEmail(string textBlobName, string recipientEmail)
         {
-            var from = new MailAddress("azure-cloud-ocr@eleks.com", "Windows Azure Cloud OCR");
-            var to = new[] { new MailAddress(recipientEmail) };
-            var subject = "Image recognition results";
-            var text = "Please find your recognized text attached.";
-            var html = text;
-
             using (MemoryStream attachmentStream = new MemoryStream())
             {
                 var blob = AzureBlobs.TextBlobContainer.GetBlockBlobReference(textBlobName);
                 blob.DownloadToStream(attachmentStream);
                 attachmentStream.Seek(0, SeekOrigin.Begin);
 
-                var sendGrid = SendGrid.GetInstance(from, to, null, null, subject, html, text);
-                sendGrid.AddAttachment(attachmentStream, "recognized-text.txt");
-                sendGridTransport.Deliver(sendGrid);
+                var message = SendGrid.GetInstance();
+                message.From = new MailAddress("azure-cloud-ocr@eleks.com", "Windows Azure Cloud OCR");
+                message.To = new[] { new MailAddress(recipientEmail) };
+                message.Subject = "Image recognition results";
+                message.Text = "Please find your recognized text attached.";
+                message.Html = message.Text;
+
+                message.AddAttachment(attachmentStream, "recognized-text.txt");
+                sendGridTransport.Deliver(message);
             }
         }
 
