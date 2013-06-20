@@ -64,7 +64,7 @@ namespace TesseractProcessor
             {
                 output.UnlockBits(outputData);
             }
-            output.Save(@"d:\Temp\monochrome.bmp");
+
             return output;
         }
 
