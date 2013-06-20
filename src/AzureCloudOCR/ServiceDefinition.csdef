@@ -16,6 +16,11 @@
     </Imports>
     <ConfigurationSettings>
       <Setting name="StorageConnectionString" />
+      <Setting name="RecaptchaPublicKey" />
+      <Setting name="RecaptchaPrivateKey" />
+      <Setting name="OCRQueueName" />
+      <Setting name="ImageBlobContainerName" />
+      <Setting name="OCRJobTableName" />
     </ConfigurationSettings>
   </WebRole>
   <WorkerRole name="OCRWorkerRole" vmsize="Small">
