@@ -23,7 +23,7 @@
       <Setting name="OCRJobTableName" />
     </ConfigurationSettings>
   </WebRole>
-  <WorkerRole name="OCRWorkerRole" vmsize="Small">
+  <WorkerRole name="OCRWorkerRole" vmsize="ExtraSmall">
     <Imports>
       <Import moduleName="Diagnostics" />
     </Imports>
@@ -35,7 +35,7 @@
       <Setting name="EmailQueueName" />
     </ConfigurationSettings>
   </WorkerRole>
-  <WorkerRole name="EmailWorkerRole" vmsize="Small">
+  <WorkerRole name="EmailWorkerRole" vmsize="ExtraSmall">
     <Imports>
       <Import moduleName="Diagnostics" />
     </Imports>
