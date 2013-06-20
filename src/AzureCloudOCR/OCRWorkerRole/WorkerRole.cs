@@ -24,7 +24,7 @@ namespace OCRWorkerRole
             while (true)
             {
                 Trace.TraceInformation("OCRWorkerRole is awake.", "Information");
-                Trace.TraceInformation("OCR Queue has approximately {0} message(s).", AzureQueues.OCRQueue.ApproximateMessageCount);
+                Trace.TraceInformation("OCR Queue has approximately {0} message(s).", AzureQueues.OCRQueue.ApproximateMessageCount ?? 0);
 
                 var ocrMessageVisibilityTimeout = TimeSpan.FromMinutes(1);
                 var ocrQueueRequestOptions = new QueueRequestOptions
@@ -51,7 +51,7 @@ namespace OCRWorkerRole
                     ProcessOCRQueueMessage(queueMessage);
                 }
 
-                Trace.TraceInformation("No new messages to process yet. Sleeping.", "Information");
+                Trace.TraceInformation("No new messages to process. Sleeping.", "Information");
                 Thread.Sleep(10000);
             }
         }
@@ -124,7 +124,7 @@ namespace OCRWorkerRole
 
                 if (string.IsNullOrEmpty(imageBlobName) || string.IsNullOrEmpty(recipientEmail))
                 {
-                    throw new FormatException("Blob name and recipient email but be non-empty.");
+                    throw new FormatException("Blob name and recipient email must be non-empty.");
                 }
             }
             catch (Exception ex)

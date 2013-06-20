@@ -27,7 +27,7 @@ namespace EmailWorkerRole
             while (true)
             {
                 Trace.TraceInformation("EmailWorkerRole is awake.", "Information");
-                Trace.TraceInformation("Email Queue has approximately {0} message(s).", AzureQueues.EmailQueue.ApproximateMessageCount);
+                Trace.TraceInformation("Email Queue has approximately {0} message(s).", AzureQueues.EmailQueue.ApproximateMessageCount ?? 0);
 
                 var emailQueueMessageVisibilityTimeout = TimeSpan.FromMinutes(1);
                 var emailQueueRequestOptions = new QueueRequestOptions
@@ -54,7 +54,7 @@ namespace EmailWorkerRole
                     ProcessEmailQueueMessage(queueMessage);
                 }
 
-                Trace.TraceInformation("No new messages to process yet. Sleeping.", "Information");
+                Trace.TraceInformation("No new messages to process. Sleeping.", "Information");
                 Thread.Sleep(10000);
             }
         }
@@ -138,7 +138,7 @@ namespace EmailWorkerRole
 
                 if (string.IsNullOrEmpty(textBlobName) || string.IsNullOrEmpty(recipientEmail))
                 {
-                    throw new FormatException("Blob name and recipient email but be non-empty.");
+                    throw new FormatException("Blob name and recipient email must be non-empty.");
                 }
             }
             catch (Exception ex)
