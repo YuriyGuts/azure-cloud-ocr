@@ -42,6 +42,8 @@
   <ItemGroup>
     <Compile Include="AzureBlobs.cs" />
     <Compile Include="AzureQueues.cs" />
+    <Compile Include="AzureTables.cs" />
+    <Compile Include="Entities\OCRJobRecord.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

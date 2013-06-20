@@ -58,5 +58,14 @@ namespace WebRole.Properties {
                 return ((string)(this["ImageBlobContainerName"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("ocrjobs")]
+        public string OCRJobTableName {
+            get {
+                return ((string)(this["OCRJobTableName"]));
+            }
+        }
     }
 }

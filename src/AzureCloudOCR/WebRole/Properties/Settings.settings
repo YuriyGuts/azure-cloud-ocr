@@ -14,5 +14,8 @@
     <Setting Name="ImageBlobContainerName" Type="System.String" Scope="Application">
       <Value Profile="(Default)">imageuploads</Value>
     </Setting>
+    <Setting Name="OCRJobTableName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">ocrjobs</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

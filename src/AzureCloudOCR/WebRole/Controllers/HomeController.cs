@@ -5,6 +5,7 @@ using System.IO;
 using System.Web;
 using System.Web.Mvc;
 using AzureStorageUtils;
+using AzureStorageUtils.Entities;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Recaptcha.Web;
@@ -56,9 +57,10 @@ namespace WebRole.Controllers
             try
             {
                 var blob = UploadImageToStorage(image);
+                var originalFileName = model.ImageFile.FileName;
                 image.Dispose();
 
-                CreateNewOCRTask(blob.Name, model.EmailAddress);
+                CreateNewOCRTask(blob.Name, originalFileName, model.EmailAddress);
                 return View("UploadImageSuccessful");
             }
             catch (Exception e)
@@ -120,7 +122,25 @@ namespace WebRole.Controllers
             }
         }
 
-        private void CreateNewOCRTask(string blobName, string emailAddress)
+        private void CreateNewOCRTask(string blobName, string originalFileName, string emailAddress)
+        {
+            CreateJobLogEntry(blobName, originalFileName, emailAddress);
+            CreateOCRQueueItem(blobName, emailAddress);
+        }
+
+        private static void CreateJobLogEntry(string blobName, string originalFileName, string emailAddress)
+        {
+            var jobRecord = new OCRJobRecord
+            {
+                DateTime = DateTime.UtcNow,
+                FileName = originalFileName,
+                ImageBlobName = blobName,
+                EmailAddress = emailAddress,
+            };
+            AzureTables.AddOCRJobRecord(jobRecord);
+        }
+
+        private static void CreateOCRQueueItem(string blobName, string emailAddress)
         {
             var messageContent = string.Format("{0}|{1}", blobName, emailAddress);
             var queueMessage = new CloudQueueMessage(messageContent);
