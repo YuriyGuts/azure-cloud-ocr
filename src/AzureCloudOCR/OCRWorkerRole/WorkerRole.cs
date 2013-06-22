@@ -14,8 +14,8 @@ namespace OCRWorkerRole
 {
     public class WorkerRole : RoleEntryPoint
     {
-        private bool onStopCalled;
-        private bool returnedFromRunMethod;
+        private volatile bool onStopCalled;
+        private volatile bool returnedFromRunMethod;
 
         private readonly TimeSpan ocrMessageVisibilityTimeout;
         private readonly QueueRequestOptions ocrQueueRequestOptions;

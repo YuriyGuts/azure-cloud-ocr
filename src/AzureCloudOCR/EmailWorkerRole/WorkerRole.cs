@@ -16,8 +16,8 @@ namespace EmailWorkerRole
 {
     public class WorkerRole : RoleEntryPoint
     {
-        private bool onStopCalled;
-        private bool returnedFromRunMethod;
+        private volatile bool onStopCalled;
+        private volatile bool returnedFromRunMethod;
         private Web sendGridTransport;
 
         private readonly TimeSpan emailQueueMessageVisibilityTimeout;
@@ -98,7 +98,8 @@ namespace EmailWorkerRole
                 Thread.Sleep(1000);
             }
 
-            Trace.TraceInformation("OnStop request received. Trying to stop...");
+            Trace.TraceInformation("Ready to stop.");
+            base.OnStop();
         }
 
         private void InitializeAzureStorage()
