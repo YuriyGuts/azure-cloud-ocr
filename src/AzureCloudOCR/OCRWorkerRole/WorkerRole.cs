@@ -38,6 +38,7 @@ namespace OCRWorkerRole
             while (true)
             {
                 Trace.TraceInformation("OCRWorkerRole is awake.", "Information");
+                AzureQueues.OCRQueue.FetchAttributes();
                 Trace.TraceInformation("OCR Queue has approximately {0} message(s).", AzureQueues.OCRQueue.ApproximateMessageCount ?? 0);
 
                 while (true)

@@ -41,6 +41,7 @@ namespace EmailWorkerRole
             while (true)
             {
                 Trace.TraceInformation("EmailWorkerRole is awake.", "Information");
+                AzureQueues.EmailQueue.FetchAttributes();
                 Trace.TraceInformation("Email Queue has approximately {0} message(s).", AzureQueues.EmailQueue.ApproximateMessageCount ?? 0);
 
                 while (true)
