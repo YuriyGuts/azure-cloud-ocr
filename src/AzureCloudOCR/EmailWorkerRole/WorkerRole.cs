@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Threading;
 using AzureStorageUtils;
+using AzureStorageUtils.Entities;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
@@ -18,7 +19,20 @@ namespace EmailWorkerRole
         private bool onStopCalled;
         private bool returnedFromRunMethod;
         private Web sendGridTransport;
+
+        private readonly TimeSpan emailQueueMessageVisibilityTimeout;
+        private readonly QueueRequestOptions emailQueueRequestOptions;
         private const int maxSingleMessageDequeueCount = 10;
+
+        public WorkerRole()
+        {
+            emailQueueMessageVisibilityTimeout = TimeSpan.FromMinutes(1);
+            emailQueueRequestOptions = new QueueRequestOptions
+            {
+                MaximumExecutionTime = TimeSpan.FromMinutes(15),
+                RetryPolicy = new LinearRetry(TimeSpan.FromMinutes(1), 5)
+            };
+        }
 
         public override void Run()
         {
@@ -28,13 +42,6 @@ namespace EmailWorkerRole
             {
                 Trace.TraceInformation("EmailWorkerRole is awake.", "Information");
                 Trace.TraceInformation("Email Queue has approximately {0} message(s).", AzureQueues.EmailQueue.ApproximateMessageCount ?? 0);
-
-                var emailQueueMessageVisibilityTimeout = TimeSpan.FromMinutes(1);
-                var emailQueueRequestOptions = new QueueRequestOptions
-                {
-                    MaximumExecutionTime = TimeSpan.FromMinutes(15),
-                    RetryPolicy = new LinearRetry(TimeSpan.FromMinutes(1), 5)
-                };
 
                 while (true)
                 {
@@ -49,6 +56,14 @@ namespace EmailWorkerRole
                     if (queueMessage == null)
                     {
                         break;
+                    }
+
+                    // To protect from accidental poison messages that get stuck in the queue.
+                    if (queueMessage.DequeueCount > maxSingleMessageDequeueCount)
+                    {
+                        Trace.TraceInformation("Message max dequeue limit reached. Deleting it as a poison message.");
+                        AzureQueues.EmailQueue.DeleteMessage(queueMessage);
+                        return;
                     }
 
                     ProcessEmailQueueMessage(queueMessage);
@@ -94,12 +109,16 @@ namespace EmailWorkerRole
             string storageConnectionString = RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString");
             string textBlobContainerName = RoleEnvironment.GetConfigurationSettingValue("TextBlobContainerName");
             string emailQueueName = RoleEnvironment.GetConfigurationSettingValue("EmailQueueName");
+            string ocrJobTableName = RoleEnvironment.GetConfigurationSettingValue("OCRJobTableName");
 
-            Trace.TraceInformation("Initializing Blob Storage.");
+            Trace.TraceInformation("Initializing Blobs.");
             AzureBlobs.Initialize(storageConnectionString, null, textBlobContainerName);
 
             Trace.TraceInformation("Initializing Queues.");
             AzureQueues.Initialize(storageConnectionString, null, emailQueueName);
+
+            Trace.TraceInformation("Initializing Tables.");
+            AzureTables.Initialize(storageConnectionString, ocrJobTableName);
         }
 
         private void InitializeSendGridMailer()
@@ -119,48 +138,51 @@ namespace EmailWorkerRole
             string messageContent = queueMessage.AsString;
             Trace.TraceInformation("Processing email queue message: " + messageContent);
 
-            // To protect from accidental poison messages that get stuck in the queue.
-            if (queueMessage.DequeueCount > maxSingleMessageDequeueCount)
-            {
-                Trace.TraceInformation("Message max dequeue limit reached. Deleting it as a poison message.");
-                AzureQueues.EmailQueue.DeleteMessage(queueMessage);
-                return;
-            }
-
-            string textBlobName;
-            string recipientEmail;
+            EmailQueueMessage emailMessage = null;
+            Exception exception = null;
 
             try
             {
-                var splitMessage = messageContent.Split('|');
-                textBlobName = splitMessage[0];
-                recipientEmail = splitMessage[1];
+                emailMessage = EmailQueueMessage.Parse(messageContent);
+                SendOCRTextByEmail(emailMessage.TextBlobName, emailMessage.RecipientEmail);
+                DeleteTextBlob(emailMessage.TextBlobName);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceInformation("An error occurred while processing email queue message. Details: " + ex);
+                exception = ex;
 
-                if (string.IsNullOrEmpty(textBlobName) || string.IsNullOrEmpty(recipientEmail))
+                if (emailMessage == null)
                 {
-                    throw new FormatException("Blob name and recipient email must be non-empty.");
+                    Trace.TraceInformation("Invalid message format. Deleting.");
+                    AzureQueues.EmailQueue.DeleteMessage(queueMessage);
+                    return;
+                }
+            }
+
+            try
+            {
+                var job = AzureTables.OCRJobRepository.GetOCRJob(emailMessage.JobID, emailMessage.RecipientEmail);
+                if (exception == null)
+                {
+                    job.IsCompleted = true;
+                    job.ErrorMessage = null;
+                    AzureTables.OCRJobRepository.UpdateOCRJob(job);
+
+                    Trace.TraceInformation("Message (JobID = {0}) successfully processed, deleting.", emailMessage.JobID);
+                    AzureQueues.EmailQueue.DeleteMessage(queueMessage);
+                }
+                else
+                {
+                    job.IsCompleted = true;
+                    job.ErrorMessage = exception.ToString();
+                    AzureTables.OCRJobRepository.UpdateOCRJob(job);
                 }
             }
             catch (Exception ex)
             {
-                Trace.TraceInformation("Invalid queue message format. Deleting. Details: " + ex.Message);
-                AzureQueues.EmailQueue.DeleteMessage(queueMessage);
-                return;
+                Trace.TraceInformation("Failed to update job status: " + ex);
             }
-
-            try
-            {
-                SendOCRTextByEmail(textBlobName, recipientEmail);
-                DeleteTextBlob(textBlobName);
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceInformation("An error occurred while processing the message. Details: " + ex.Message);
-                return;
-            }
-
-            Trace.TraceInformation("Email queue message successfully processed, deleting." + messageContent);
-            AzureQueues.EmailQueue.DeleteMessage(queueMessage);
         }
 
         private void SendOCRTextByEmail(string textBlobName, string recipientEmail)

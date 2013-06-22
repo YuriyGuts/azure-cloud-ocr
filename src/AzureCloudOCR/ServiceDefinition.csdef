@@ -33,6 +33,7 @@
       <Setting name="TextBlobContainerName" />
       <Setting name="OCRQueueName" />
       <Setting name="EmailQueueName" />
+      <Setting name="OCRJobTableName" />
     </ConfigurationSettings>
   </WorkerRole>
   <WorkerRole name="EmailWorkerRole" vmsize="ExtraSmall">
@@ -43,6 +44,7 @@
       <Setting name="StorageConnectionString" />
       <Setting name="TextBlobContainerName" />
       <Setting name="EmailQueueName" />
+      <Setting name="OCRJobTableName" />
       <Setting name="SendGridUserName" />
       <Setting name="SendGridPassword" />
     </ConfigurationSettings>

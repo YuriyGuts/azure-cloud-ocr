@@ -21,6 +21,7 @@
       <Setting name="TextBlobContainerName" value="ocrtext" />
       <Setting name="OCRQueueName" value="ocrqueue" />
       <Setting name="EmailQueueName" value="emailqueue" />
+      <Setting name="OCRJobTableName" value="ocrjobs" />
     </ConfigurationSettings>
   </Role>
   <Role name="EmailWorkerRole">
@@ -30,6 +31,7 @@
       <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=eleksocr;AccountKey=enter+your+private+key+here++w==" />
       <Setting name="TextBlobContainerName" value="ocrtext" />
       <Setting name="EmailQueueName" value="emailqueue" />
+      <Setting name="OCRJobTableName" value="ocrjobs" />
       <Setting name="SendGridUserName" value="sendgriduser" />
       <Setting name="SendGridPassword" value="sendgridpassword" />
     </ConfigurationSettings>

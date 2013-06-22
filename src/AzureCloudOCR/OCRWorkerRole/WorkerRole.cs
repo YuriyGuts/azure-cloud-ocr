@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using AzureStorageUtils;
+using AzureStorageUtils.Entities;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Queue;
@@ -15,7 +16,20 @@ namespace OCRWorkerRole
     {
         private bool onStopCalled;
         private bool returnedFromRunMethod;
+
+        private readonly TimeSpan ocrMessageVisibilityTimeout;
+        private readonly QueueRequestOptions ocrQueueRequestOptions;
         private const int maxSingleMessageDequeueCount = 10;
+
+        public WorkerRole()
+        {
+            ocrMessageVisibilityTimeout = TimeSpan.FromMinutes(1);
+            ocrQueueRequestOptions = new QueueRequestOptions
+            {
+                MaximumExecutionTime = TimeSpan.FromMinutes(15),
+                RetryPolicy = new LinearRetry(TimeSpan.FromMinutes(1), 5)
+            };
+        }
 
         public override void Run()
         {
@@ -25,13 +39,6 @@ namespace OCRWorkerRole
             {
                 Trace.TraceInformation("OCRWorkerRole is awake.", "Information");
                 Trace.TraceInformation("OCR Queue has approximately {0} message(s).", AzureQueues.OCRQueue.ApproximateMessageCount ?? 0);
-
-                var ocrMessageVisibilityTimeout = TimeSpan.FromMinutes(1);
-                var ocrQueueRequestOptions = new QueueRequestOptions
-                {
-                    MaximumExecutionTime = TimeSpan.FromMinutes(15),
-                    RetryPolicy = new LinearRetry(TimeSpan.FromMinutes(1), 5)
-                };
 
                 while (true)
                 {
@@ -46,6 +53,14 @@ namespace OCRWorkerRole
                     if (queueMessage == null)
                     {
                         break;
+                    }
+
+                    // To protect from accidental poison messages that get stuck in the queue.
+                    if (queueMessage.DequeueCount > maxSingleMessageDequeueCount)
+                    {
+                        Trace.TraceInformation("Message max dequeue limit reached. Deleting it as a poison message.");
+                        AzureQueues.OCRQueue.DeleteMessage(queueMessage);
+                        return;
                     }
 
                     ProcessOCRQueueMessage(queueMessage);
@@ -79,7 +94,8 @@ namespace OCRWorkerRole
                 Thread.Sleep(1000);
             }
 
-            Trace.TraceInformation("OnStop request received. Trying to stop...");
+            Trace.TraceInformation("Ready to stop.");
+            base.OnStop();
         }
 
         private void InitializeAzureStorage()
@@ -92,66 +108,73 @@ namespace OCRWorkerRole
             string textBlobContainerName = RoleEnvironment.GetConfigurationSettingValue("TextBlobContainerName");
             string ocrQueueName = RoleEnvironment.GetConfigurationSettingValue("OCRQueueName");
             string emailQueueName = RoleEnvironment.GetConfigurationSettingValue("EmailQueueName");
+            string ocrJobTableName = RoleEnvironment.GetConfigurationSettingValue("OCRJobTableName");
 
-            Trace.TraceInformation("Initializing Blob Storage.");
+            Trace.TraceInformation("Initializing Blobs.");
             AzureBlobs.Initialize(storageConnectionString, imageBlobContainerName, textBlobContainerName);
 
             Trace.TraceInformation("Initializing Queues.");
             AzureQueues.Initialize(storageConnectionString, ocrQueueName, emailQueueName);
+
+            Trace.TraceInformation("Initializing Tables.");
+            AzureTables.Initialize(storageConnectionString, ocrJobTableName);
         }
 
         private void ProcessOCRQueueMessage(CloudQueueMessage queueMessage)
         {
-            string messageContent = queueMessage.AsString;
+            var messageContent = queueMessage.AsString;
             Trace.TraceInformation("Processing OCR queue message: " + messageContent);
 
-            // To protect from accidental poison messages that get stuck in the queue.
-            if (queueMessage.DequeueCount > maxSingleMessageDequeueCount)
-            {
-                Trace.TraceInformation("Message max dequeue limit reached. Deleting it as a poison message.");
-                AzureQueues.OCRQueue.DeleteMessage(queueMessage);
-                return;
-            }
-
-            string imageBlobName;
-            string recipientEmail;
+            OCRQueueMessage ocrMessage = null;
+            Exception exception = null;
 
             try
             {
-                var splitMessage = messageContent.Split('|');
-                imageBlobName = splitMessage[0];
-                recipientEmail = splitMessage[1];
-
-                if (string.IsNullOrEmpty(imageBlobName) || string.IsNullOrEmpty(recipientEmail))
-                {
-                    throw new FormatException("Blob name and recipient email must be non-empty.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceInformation("Invalid OCR message format. Deleting. Details: " + ex.Message);
-                AzureQueues.OCRQueue.DeleteMessage(queueMessage);
-                return;
-            }
-
-            try
-            {
-                string imageFileName = SaveImageBlobToLocalFile(imageBlobName);
+                ocrMessage = OCRQueueMessage.Parse(messageContent);
+                string imageFileName = SaveImageBlobToLocalFile(ocrMessage.ImageBlobName);
                 string ocrTextFileName = PerformOCROnImageFile(imageFileName);
                 string ocrBlobName = new FileInfo(ocrTextFileName).Name;
                 CloudBlockBlob textBlob = StoreRecognizedTextAsBlob(ocrTextFileName, ocrBlobName);
-                CreateEmailTask(textBlob.Name, recipientEmail);
-                DeleteInputImage(imageBlobName);
+                CreateEmailTask(ocrMessage.JobID, textBlob.Name, ocrMessage.RecipientEmail);
+                DeleteInputImage(ocrMessage.ImageBlobName);
                 DeleteTemporaryFiles(imageFileName, ocrTextFileName);
             }
             catch (Exception ex)
             {
-                Trace.TraceInformation("An error occurred while processing OCR message. Details: " + ex.Message);
-                return;
+                Trace.TraceInformation("An error occurred while processing OCR message. Details: " + ex);
+                exception = ex;
+
+                if (ocrMessage == null)
+                {
+                    Trace.TraceInformation("Invalid message format. Deleting.");
+                    AzureQueues.OCRQueue.DeleteMessage(queueMessage);
+                    return;
+                }
             }
 
-            Trace.TraceInformation("OCR message successfully processed, deleting." + messageContent);
-            AzureQueues.OCRQueue.DeleteMessage(queueMessage);
+            try
+            {
+                var job = AzureTables.OCRJobRepository.GetOCRJob(ocrMessage.JobID, ocrMessage.RecipientEmail);
+                if (exception == null)
+                {
+                    job.IsCompleted = true;
+                    job.ErrorMessage = null;
+                    AzureTables.OCRJobRepository.UpdateOCRJob(job);
+
+                    Trace.TraceInformation("Message (JobID = {0}) successfully processed, deleting.", ocrMessage.JobID);
+                    AzureQueues.OCRQueue.DeleteMessage(queueMessage);
+                }
+                else
+                {
+                    job.IsCompleted = true;
+                    job.ErrorMessage = exception.ToString();
+                    AzureTables.OCRJobRepository.UpdateOCRJob(job);
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceInformation("Failed to update job status: " + ex);
+            }
         }
 
         private string SaveImageBlobToLocalFile(string imageBlobName)
@@ -198,11 +221,11 @@ namespace OCRWorkerRole
             return blob;
         }
 
-        private void CreateEmailTask(string textBlobName, string recipientEmail)
+        private void CreateEmailTask(Guid jobID, string textBlobName, string recipientEmail)
         {
-            var messageContent = string.Format("{0}|{1}", textBlobName, recipientEmail);
-            var queueMessage = new CloudQueueMessage(messageContent);
-            AzureQueues.EmailQueue.AddMessage(queueMessage);
+            var message = new EmailQueueMessage(jobID, textBlobName, recipientEmail);
+            var wrappedMessage = new CloudQueueMessage(message.ToString());
+            AzureQueues.EmailQueue.AddMessage(wrappedMessage);
         }
 
         private void DeleteInputImage(string imageBlobName)

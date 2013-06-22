@@ -44,28 +44,28 @@ namespace WebRole.Controllers
         public ActionResult UploadImage_Post(UploadImageViewModel model)
         {
             NormalizeUploadImageViewModel(model);
-            
-            var image = ValidateAndExtractImage(model.ImageFile);
-            ValidateCaptcha();
-
-            if (!ModelState.IsValid)
+            using (var image = ValidateAndExtractImage(model.ImageFile))
             {
-                return View(model);
-            }
+                ValidateCaptcha();
+                if (!ModelState.IsValid)
+                {
+                    return View(model);
+                }
 
-            try
-            {
-                var blob = UploadImageToStorage(image);
-                var originalFileName = model.ImageFile.FileName;
-                image.Dispose();
-
-                CreateNewOCRTask(blob.Name, originalFileName, model.EmailAddress);
-                return View("UploadImageSuccessful");
-            }
-            catch (Exception e)
-            {
-                Error("An error occurred: " + e.Message);
-                return View(model);
+                try
+                {
+                    var jobID = Guid.NewGuid();
+                    var blob = UploadImageToStorage(image, jobID.ToString());
+                    var originalFileName = model.ImageFile.FileName;
+                    
+                    CreateNewOCRTask(jobID, originalFileName, model.EmailAddress, blob.Name);
+                    return View("UploadImageSuccessful");
+                }
+                catch (Exception e)
+                {
+                    Error("An error occurred: " + e.Message);
+                    return View(model);
+                }
             }
         }
 
@@ -107,43 +107,43 @@ namespace WebRole.Controllers
             }
         }
 
-        private CloudBlockBlob UploadImageToStorage(Image image)
+        private CloudBlockBlob UploadImageToStorage(Image image, string preferredName)
         {
             using (MemoryStream imageStream = new MemoryStream())
             {
                 image.Save(imageStream, ImageFormat.Tiff);
                 imageStream.Seek(0, SeekOrigin.Begin);
 
-                string blobName = Guid.NewGuid() + ".tif";
+                string blobName = preferredName + ".tif";
                 var blob = AzureBlobs.ImageBlobContainer.GetBlockBlobReference(blobName);
                 blob.UploadFromStream(imageStream);
                 return blob;
             }
         }
 
-        private void CreateNewOCRTask(string blobName, string originalFileName, string emailAddress)
+        private void CreateNewOCRTask(Guid jobID, string originalFileName, string emailAddress, string blobName)
         {
-            CreateJobLogEntry(blobName, originalFileName, emailAddress);
-            CreateOCRQueueItem(blobName, emailAddress);
+            CreateJobLogEntry(jobID, originalFileName, emailAddress);
+            CreateOCRQueueItem(jobID, blobName, emailAddress);
         }
 
-        private static void CreateJobLogEntry(string blobName, string originalFileName, string emailAddress)
+        private static void CreateJobLogEntry(Guid jobID, string originalFileName, string emailAddress)
         {
-            var jobRecord = new OCRJobRecord
+            var jobRecord = new OCRJob
             {
+                ID = jobID,
                 DateTime = DateTime.UtcNow,
-                FileName = originalFileName,
-                ImageBlobName = blobName,
+                OriginalFileName = originalFileName,
                 EmailAddress = emailAddress,
             };
-            AzureTables.AddOCRJobRecord(jobRecord);
+            AzureTables.OCRJobRepository.AddOCRJob(jobRecord);
         }
 
-        private static void CreateOCRQueueItem(string blobName, string emailAddress)
+        private static void CreateOCRQueueItem(Guid jobID, string blobName, string emailAddress)
         {
-            var messageContent = string.Format("{0}|{1}", blobName, emailAddress);
-            var queueMessage = new CloudQueueMessage(messageContent);
-            AzureQueues.OCRQueue.AddMessage(queueMessage);
+            var message = new OCRQueueMessage(jobID, blobName, emailAddress);
+            var wrappedMessage = new CloudQueueMessage(message.ToString());
+            AzureQueues.OCRQueue.AddMessage(wrappedMessage);
         }
     }
 }

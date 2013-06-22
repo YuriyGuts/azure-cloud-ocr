@@ -8,34 +8,25 @@ namespace AzureStorageUtils
     {
         private static CloudStorageAccount storageAccount;
         private static CloudTableClient tableClient;
-        private static CloudTable ocrJobTable;
+        private static OCRJobRepository ocrJobRepository;
 
-        public static CloudTable OCRJobTable
+        public static OCRJobRepository OCRJobRepository
         {
-            get { return ocrJobTable; }
+            get { return ocrJobRepository; }
         }
 
         public static void Initialize(string storageConnectionString, string ocrJobTableName)
         {
             storageAccount = CloudStorageAccount.Parse(storageConnectionString);
             tableClient = storageAccount.CreateCloudTableClient();
-            ocrJobTable = InitializeTable(ocrJobTableName);
+            ocrJobRepository = InitializeOCRJobRepository(ocrJobTableName);
         }
 
-        private static CloudTable InitializeTable(string tableName)
+        private static OCRJobRepository InitializeOCRJobRepository(string tableName)
         {
             var table = tableClient.GetTableReference(tableName);
             table.CreateIfNotExists();
-            return table;
-        }
-
-        public static void AddOCRJobRecord(OCRJobRecord jobRecord)
-        {
-            jobRecord.PartitionKey = jobRecord.EmailAddress;
-            jobRecord.RowKey = jobRecord.ImageBlobName;
-
-            TableOperation insertOperation = TableOperation.Insert(jobRecord);
-            ocrJobTable.Execute(insertOperation);
+            return new OCRJobRepository(table);
         }
     }
 }
