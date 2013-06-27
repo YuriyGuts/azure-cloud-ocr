@@ -5,11 +5,13 @@ Windows Azure Web and Worker Roles, and stores data in Windows Azure Blobs, Tabl
 
 __General workflow:__
 
-1. User uploads an image on a web page served by the Web Role, specifies an email address, and enters a CAPTCHA code.
+1. User uploads an image on a web page served by the Web Role, specifies an email address, and enters a CAPTCHA.
 2. Web Role uploads the image to Blob Storage, registers the job in an Azure Table and creates an OCR queue item.
-3. OCR Worker Role pulls messages from the OCR queue, recognizes the images using Google Tesseract, stores the recognized text to Blob Storage, and creates an Email queue item.
-4. Email Worker Role pulls messages the the Email queue, reads the recognized text from Blob Storage, and emails it via SendGrid.
+3. OCR Worker Role pulls messages from the OCR queue, recognizes the images using Google Tesseract, stores the recognized text to Blob Storage, and creates Email queue items.
+4. Email Worker Role pulls messages from the Email queue, reads the recognized text from Blob Storage, and emails it via SendGrid.
 5. User receives the recognized text as an email with a text attachment.
+
+![Architecture](/assets/architecture-small.png)
 
 ## Project Setup
 
