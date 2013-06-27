@@ -20,6 +20,7 @@ namespace TesseractProcessor
 
             var inputFileName = args[0];
             var outputFileName = args[1];
+            Trace.TraceInformation("Recognizing image: {0} --> {1}", inputFileName, outputFileName);
 
             var inputImage = Image.FromFile(inputFileName);
             var recognizedText = RecognizeTextFromImage(inputImage);

@@ -59,7 +59,7 @@ namespace OCRWorkerRole
                     // To protect from accidental poison messages that get stuck in the queue.
                     if (queueMessage.DequeueCount > maxSingleMessageDequeueCount)
                     {
-                        Trace.TraceInformation("Message max dequeue limit reached. Deleting it as a poison message.");
+                        Trace.TraceWarning("Message max dequeue limit reached. Deleting it as a poison message.");
                         AzureQueues.OCRQueue.DeleteMessage(queueMessage);
                         return;
                     }
@@ -142,12 +142,12 @@ namespace OCRWorkerRole
             }
             catch (Exception ex)
             {
-                Trace.TraceInformation("An error occurred while processing OCR message. Details: " + ex);
+                Trace.TraceError("An error occurred while processing OCR message. Details: " + ex);
                 exception = ex;
 
                 if (ocrMessage == null)
                 {
-                    Trace.TraceInformation("Invalid message format. Deleting.");
+                    Trace.TraceError("Invalid message format. Deleting.");
                     AzureQueues.OCRQueue.DeleteMessage(queueMessage);
                     return;
                 }
@@ -174,7 +174,7 @@ namespace OCRWorkerRole
             }
             catch (Exception ex)
             {
-                Trace.TraceInformation("Failed to update job status: " + ex);
+                Trace.TraceError("Failed to update job status: " + ex);
             }
         }
 
