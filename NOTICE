@@ -1,0 +1,17 @@
+Azure Cloud OCR
+Copyright (c) Yuriy Guts, 2013
+
+This software includes the binaries of the Google Tesseract OCR Engine
+(https://code.google.com/p/tesseract-ocr/), originally developed at
+Hewlett Packard Laboratories Bristol and Hewlett Packard Co, Greeley Colorado.
+Tesseract OCR source code is licensed under the Apache License, Version 2.0.
+
+
+Other Dependencies and Licenses:
+================================
+
+Twitter Bootstrap framework v2.3.2 (http://twitter.github.io/bootstrap/)
+Licensed under the Apache License, Version 2.0.
+
+ReCaptcha library for .NET v1.0.5.0 (https://code.google.com/p/recaptcha/)
+Licensed under the MIT License.

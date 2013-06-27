@@ -48,4 +48,4 @@ The application can be deployed from Visual Studio 2012. Right-click the `AzureC
 
 ## License
 
-(TBD)
+The code is licensed under [the Apache License, version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
