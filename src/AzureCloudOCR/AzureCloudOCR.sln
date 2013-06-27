@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OCRWorkerRole", "OCRWorkerR
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureStorageUtils", "AzureStorageUtils\AzureStorageUtils.csproj", "{DEB0F038-469C-4EB5-B63B-595AE70CAF06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Recaptcha.Web", "Recaptcha.Web\Recaptcha.Web.csproj", "{47C0DB18-D553-41BE-98F9-6A5C08FAC0C6}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmailWorkerRole", "EmailWorkerRole\EmailWorkerRole.csproj", "{C4A77B29-F900-4759-94A5-9C03B1A4B98A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TesseractProcessor", "TesseractProcessor\TesseractProcessor.csproj", "{C5FE4423-7BEB-4E2A-8820-33B39CDCAA1D}"
@@ -44,10 +42,6 @@ Global
 		{DEB0F038-469C-4EB5-B63B-595AE70CAF06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DEB0F038-469C-4EB5-B63B-595AE70CAF06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DEB0F038-469C-4EB5-B63B-595AE70CAF06}.Release|Any CPU.Build.0 = Release|Any CPU
-		{47C0DB18-D553-41BE-98F9-6A5C08FAC0C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{47C0DB18-D553-41BE-98F9-6A5C08FAC0C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{47C0DB18-D553-41BE-98F9-6A5C08FAC0C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{47C0DB18-D553-41BE-98F9-6A5C08FAC0C6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C4A77B29-F900-4759-94A5-9C03B1A4B98A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4A77B29-F900-4759-94A5-9C03B1A4B98A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4A77B29-F900-4759-94A5-9C03B1A4B98A}.Release|Any CPU.ActiveCfg = Release|Any CPU

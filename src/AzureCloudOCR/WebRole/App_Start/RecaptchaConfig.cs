@@ -1,4 +1,5 @@
 ﻿using Microsoft.WindowsAzure.ServiceRuntime;
+using Recaptcha;
 
 namespace WebRole
 {
@@ -21,6 +22,9 @@ namespace WebRole
         {
             recaptchaPublicKey = RoleEnvironment.GetConfigurationSettingValue("RecaptchaPublicKey");
             recaptchaPrivateKey = RoleEnvironment.GetConfigurationSettingValue("RecaptchaPrivateKey");
+
+            RecaptchaControlMvc.PublicKey = recaptchaPublicKey;
+            RecaptchaControlMvc.PrivateKey = recaptchaPrivateKey;
         }
     }
 }

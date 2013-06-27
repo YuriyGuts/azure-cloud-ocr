@@ -1,6 +1,5 @@
 ﻿@using System.Web.Optimization
-@using Recaptcha.Web
-@using Recaptcha.Web.Mvc
+@using WebRole.HtmlHelpers
 
 @model WebRole.Models.UploadImageViewModel
 
@@ -29,7 +28,7 @@
 
         @Html.Label("Verification code", new { @class = "control-label" })
         <div class="controls">
-            @Html.Recaptcha(@Model.CaptchaPublicKey, RecaptchaTheme.Clean)
+            @Html.Recaptcha(string.Empty, "clean")
         </div>
     </div>
     

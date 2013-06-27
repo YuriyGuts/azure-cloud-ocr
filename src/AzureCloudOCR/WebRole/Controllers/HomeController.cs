@@ -8,8 +8,7 @@ using AzureStorageUtils;
 using AzureStorageUtils.Entities;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Queue;
-using Recaptcha.Web;
-using Recaptcha.Web.Mvc;
+using Recaptcha;
 using WebRole.Models;
 
 namespace WebRole.Controllers
@@ -31,7 +30,6 @@ namespace WebRole.Controllers
         [ActionName("UploadImage")]
         public ActionResult UploadImage_Get(UploadImageViewModel model)
         {
-            NormalizeUploadImageViewModel(model);
             return View(model);
         }
 
@@ -40,13 +38,13 @@ namespace WebRole.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RecaptchaControlMvc.CaptchaValidator]
         [ActionName("UploadImage")]
-        public ActionResult UploadImage_Post(UploadImageViewModel model)
+        public ActionResult UploadImage_Post(UploadImageViewModel model, bool captchaValid)
         {
-            NormalizeUploadImageViewModel(model);
+            ValidateCaptcha(captchaValid);
             using (var image = ValidateAndExtractImage(model.ImageFile))
             {
-                ValidateCaptcha();
                 if (!ModelState.IsValid)
                 {
                     return View(model);
@@ -69,14 +67,6 @@ namespace WebRole.Controllers
             }
         }
 
-        private void NormalizeUploadImageViewModel(UploadImageViewModel model)
-        {
-            if (model != null && model.CaptchaPublicKey == null)
-            {
-                model.CaptchaPublicKey = RecaptchaConfig.RecaptchaPublicKey;
-            }
-        }
-
         private Image ValidateAndExtractImage(HttpPostedFileBase imageFile)
         {
             Image result = null;
@@ -91,19 +81,11 @@ namespace WebRole.Controllers
             return result;
         }
 
-        private void ValidateCaptcha()
+        private void ValidateCaptcha(bool captchaValid)
         {
-            RecaptchaVerificationHelper recaptchaHelper = this.GetRecaptchaVerificationHelper(RecaptchaConfig.RecaptchaPrivateKey);
-            if (String.IsNullOrEmpty(recaptchaHelper.Response))
+            if (!captchaValid)
             {
-                ModelState.AddModelError("captcha-answer-empty", "Verification code cannot be empty.");
-                return;
-            }
-
-            RecaptchaVerificationResult recaptchaResult = recaptchaHelper.VerifyRecaptchaResponse();
-            if (recaptchaResult != RecaptchaVerificationResult.Success)
-            {
-                ModelState.AddModelError("captcha-answer-incorrect", "Incorrect verification code.");
+                ModelState.AddModelError("captcha-incorrect", string.Format("Incorrect verification code."));
             }
         }
 
