@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MessageQueue")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("AzureStorageUtils")]
+[assembly: AssemblyDescription("Provides helper classes for managing application-specific items in Windows Azure Storage.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("MessageQueue")]
-[assembly: AssemblyCopyright("Copyright ©  2013")]
+[assembly: AssemblyCompany("Yuriy Guts")]
+[assembly: AssemblyProduct("Azure Cloud OCR")]
+[assembly: AssemblyCopyright("Copyright © Yuriy Guts, 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

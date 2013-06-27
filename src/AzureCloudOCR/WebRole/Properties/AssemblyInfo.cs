@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("WebRole")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Windows Azure Web Role for uploading images and creating OCR jobs.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("WebRole")]
-[assembly: AssemblyCopyright("Copyright ©  2013")]
+[assembly: AssemblyCompany("Yuriy Guts")]
+[assembly: AssemblyProduct("Azure Cloud OCR")]
+[assembly: AssemblyCopyright("Copyright © Yuriy Guts, 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

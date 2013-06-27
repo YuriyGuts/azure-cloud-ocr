@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("TesseractProcessor")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A 32-bit wrapper process for interacting with TesseractOCR native libraries.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("TesseractProcessor")]
-[assembly: AssemblyCopyright("Copyright ©  2013")]
+[assembly: AssemblyCompany("Yuriy Guts")]
+[assembly: AssemblyProduct("Azure Cloud OCR")]
+[assembly: AssemblyCopyright("Copyright © Yuriy Guts, 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

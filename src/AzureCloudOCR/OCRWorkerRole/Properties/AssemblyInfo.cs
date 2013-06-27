@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("OCRWorkerRole")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Windows Azure Worker Role that processes the OCR task queue and recognizes text from uploaded images.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("OCRWorkerRole")]
-[assembly: AssemblyCopyright("Copyright ©  2013")]
+[assembly: AssemblyCompany("Yuriy Guts")]
+[assembly: AssemblyProduct("Azure Cloud OCR")]
+[assembly: AssemblyCopyright("Copyright © Yuriy Guts, 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

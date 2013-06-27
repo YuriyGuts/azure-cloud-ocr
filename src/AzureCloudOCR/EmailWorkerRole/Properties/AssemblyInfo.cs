@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("EmailWorkerRole")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Windows Azure Worker Role that processes the email task queue and send emails to recipients.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("EmailWorkerRole")]
-[assembly: AssemblyCopyright("Copyright ©  2013")]
+[assembly: AssemblyCompany("Yuriy Guts")]
+[assembly: AssemblyProduct("Azure Cloud OCR")]
+[assembly: AssemblyCopyright("Copyright © Yuriy Guts, 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
